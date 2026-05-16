@@ -16,7 +16,8 @@ class ExtractionSchema(BaseModel):
 
 
 class ExtractRequest(BaseModel):
-    text: str
+    text: str | None = None
+    upload_id: int | None = None
     patient_id: int | None = None
 
 
@@ -54,8 +55,15 @@ class PatientResponse(BaseModel):
 class ExtractionHistoryItem(BaseModel):
     id: int
     patient_id: int | None = None
+    upload_id: int | None = None
+    upload_filename: str | None = None
     patient_code: str | None = None
     patient_name: str | None = None
     model_name: str
     structured_json: dict[str, Any]
     created_at: str
+
+
+class ExtractFromUploadRequest(BaseModel):
+    upload_id: int
+    patient_id: int | None = None

@@ -6,6 +6,7 @@ import {
   getHealth,
   listPatients,
   getModels,
+  login,
   runOCR,
   selectModel,
   streamExtraction,
@@ -59,6 +60,10 @@ const quickQueue = [
 export default function HomePage() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [token, setToken] = useState('');
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('admin');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
 
   const [health, setHealth] = useState(null);
   const [models, setModels] = useState([]);
@@ -76,6 +81,7 @@ export default function HomePage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [ocrText, setOcrText] = useState('');
+  const [activeUploadId, setActiveUploadId] = useState(null);
 
   const [globalError, setGlobalError] = useState('');
   const [info, setInfo] = useState('');
@@ -115,6 +121,10 @@ export default function HomePage() {
         setPatients([]);
       }
     } catch (error) {
+      if (hasAuth && String(error?.message || '').toLowerCase().includes('invalid token')) {
+        setToken('');
+        localStorage.removeItem('ocip_token');
+      }
       setGlobalError(error.message || 'Failed to refresh runtime status');
     }
   }
@@ -136,6 +146,24 @@ export default function HomePage() {
     setHealth(null);
     setInfo('Logged out.');
     logActivity('Session ended by user.');
+  }
+
+  async function handleLocalSignIn(event) {
+    event.preventDefault();
+    setAuthLoading(true);
+    setAuthError('');
+    setGlobalError('');
+    try {
+      const data = await login(username, password);
+      setToken(data.access_token);
+      localStorage.setItem('ocip_token', data.access_token);
+      setInfo('Local session connected.');
+      logActivity('Authenticated local clinical session.');
+    } catch (error) {
+      setAuthError(error.message || 'Sign in failed');
+    } finally {
+      setAuthLoading(false);
+    }
   }
 
   async function handleModelSelect() {
@@ -167,6 +195,7 @@ export default function HomePage() {
   function handleDropFile(nextFile) {
     if (!nextFile) return;
     setFile(nextFile);
+    setActiveUploadId(null);
     setInfo(`Loaded file: ${nextFile.name}`);
   }
 
@@ -183,9 +212,11 @@ export default function HomePage() {
     setGlobalError('');
     setUploading(true);
     setUploadProgress(0);
+    setActiveUploadId(null);
 
     try {
-      await uploadFile(file, token, setUploadProgress);
+      const uploadData = await uploadFile(file, token, setUploadProgress);
+      setActiveUploadId(uploadData?.upload_id || null);
       logActivity(`Uploaded ${file.name} to local secure storage.`);
 
       const ocrResponse = await runOCR(file, token);
@@ -236,7 +267,8 @@ export default function HomePage() {
           setGlobalError(event.message || 'Streaming extraction failed');
         }
         },
-        selectedPatientId || null
+        selectedPatientId || null,
+        activeUploadId || null
       );
 
       const latency = Math.round(performance.now() - startedAt);
@@ -266,7 +298,7 @@ export default function HomePage() {
     const startedAt = performance.now();
 
     try {
-      const response = await extractText(noteText, token, selectedPatientId || null);
+      const response = await extractText(noteText, token, selectedPatientId || null, activeUploadId || null);
       const payload = response?.extraction || null;
       setExtraction(payload);
       setStreamText(JSON.stringify(payload, null, 2));
@@ -339,6 +371,26 @@ export default function HomePage() {
               Live operations panel for note extraction, risk flags, and model governance.
               {!hasAuth ? ' Demo mode is active on this deployment.' : ''}
             </p>
+            {!hasAuth ? (
+              <form onSubmit={handleLocalSignIn} className="login-form" style={{ marginTop: 12 }}>
+                <label>
+                  Local Username
+                  <input value={username} onChange={(event) => setUsername(event.target.value)} />
+                </label>
+                <label>
+                  Local Password
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                </label>
+                <button type="submit" disabled={authLoading}>
+                  {authLoading ? 'Connecting...' : 'Connect Local Session'}
+                </button>
+                {authError ? <p className="status error">{authError}</p> : null}
+              </form>
+            ) : null}
           </div>
           <button className="refresh" type="button" onClick={refreshRuntime}>
             Refresh Runtime

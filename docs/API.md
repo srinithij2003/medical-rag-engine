@@ -27,7 +27,7 @@ Response: extracted plaintext from report.
 ## `POST /extract`
 Request:
 ```json
-{ "text": "Patient complains of chest pain for 3 days..." }
+{ "text": "Patient complains of chest pain for 3 days...", "patient_id": 1, "upload_id": 12 }
 ```
 Response:
 ```json
@@ -56,6 +56,16 @@ Each frame:
 Final validated frame:
 ```json
 { "type": "result", "result": { ...schema... } }
+```
+
+Notes:
+- `text` or `upload_id` can be used as the extraction source.
+- `patient_id` and `upload_id` are persisted in `extraction_results`.
+
+## `POST /extract/from-upload`
+Extract directly from a previously uploaded file record.
+```json
+{ "upload_id": 12, "patient_id": 1 }
 ```
 
 ## `GET /models`

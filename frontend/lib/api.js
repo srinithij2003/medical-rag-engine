@@ -50,15 +50,15 @@ export async function selectModel(model, token) {
   });
 }
 
-export async function extractText(text, token, patientId) {
+export async function extractText(text, token, patientId, uploadId) {
   return request('/extract', {
     method: 'POST',
     token,
-    body: JSON.stringify({ text, patient_id: patientId || null }),
+    body: JSON.stringify({ text, patient_id: patientId || null, upload_id: uploadId || null }),
   });
 }
 
-export function streamExtraction(text, token, onEvent, patientId) {
+export function streamExtraction(text, token, onEvent, patientId, uploadId) {
   return new Promise(async (resolve, reject) => {
     const response = await fetch(`${apiBase}/extract/stream`, {
       method: 'POST',
@@ -66,7 +66,7 @@ export function streamExtraction(text, token, onEvent, patientId) {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ text, patient_id: patientId || null }),
+      body: JSON.stringify({ text, patient_id: patientId || null, upload_id: uploadId || null }),
     });
 
     if (!response.ok || !response.body) {

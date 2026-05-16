@@ -103,6 +103,7 @@ docker compose up --build
 - `POST /ocr`
 - `POST /extract`
 - `POST /extract/stream`
+- `POST /extract/from-upload`
 - `GET /models`
 - `POST /models/select`
 - `GET /admin/audit-logs`
