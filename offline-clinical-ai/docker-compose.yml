@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ocip-ollama
+    restart: unless-stopped
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollama:/root/.ollama
+    networks:
+      - ocip
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    container_name: ocip-backend
+    restart: unless-stopped
+    environment:
+      APP_NAME: Offline Clinical Intelligence Platform
+      DATABASE_URL: sqlite+aiosqlite:///./data/clinical.db
+      OLLAMA_BASE_URL: http://ollama:11434/v1
+      OLLAMA_MODEL: gemma3:4b
+      JWT_SECRET: replace-this-in-production
+      NO_TELEMETRY: 'true'
+    volumes:
+      - ./data:/app/data
+      - ./backend:/app/backend
+    depends_on:
+      - ollama
+    ports:
+      - '8000:8000'
+    networks:
+      - ocip
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    container_name: ocip-frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    depends_on:
+      - backend
+    ports:
+      - '3000:3000'
+    networks:
+      - ocip
+
+volumes:
+  ollama:
+
+networks:
+  ocip:
+    driver: bridge

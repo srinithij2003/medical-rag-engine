@@ -1,0 +1,18 @@
+# Node
+frontend/node_modules
+frontend/.next
+
+# Python
+**/__pycache__
+**/*.pyc
+.venv
+
+# Data
+.env
+backend/.env
+data/uploads/*
+!data/uploads/.gitkeep
+data/chroma/*
+
+# OS
+.DS_Store
