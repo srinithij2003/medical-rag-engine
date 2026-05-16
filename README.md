@@ -101,6 +101,9 @@ Important: a fully offline privacy-first deployment (`FastAPI + Ollama` local in
 ### Extraction History
 ![Extraction History](docs/screenshots/extractions.png)
 
+### JSON Extraction
+![JSON Extraction](docs/screenshots/json-extraction.png)
+
 ## Docker offline deployment
 ```bash
 docker compose up --build
