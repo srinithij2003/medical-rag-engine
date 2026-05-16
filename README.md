@@ -91,6 +91,16 @@ For full details, see [docs/VERCEL_DEPLOYMENT.md](docs/VERCEL_DEPLOYMENT.md).
 
 Important: a fully offline privacy-first deployment (`FastAPI + Ollama` local inference) cannot be fully hosted on Vercel.
 
+## UI Screenshots
+### Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Patient Registry
+![Patient Registry](docs/screenshots/patients.png)
+
+### Extraction History
+![Extraction History](docs/screenshots/extractions.png)
+
 ## Docker offline deployment
 ```bash
 docker compose up --build
