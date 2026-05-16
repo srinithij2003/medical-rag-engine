@@ -37,3 +37,25 @@ class LoginRequest(BaseModel):
 
 class ModelSelectRequest(BaseModel):
     model: str
+
+
+class PatientCreateRequest(BaseModel):
+    patient_code: str
+    name: str
+
+
+class PatientResponse(BaseModel):
+    id: int
+    patient_code: str
+    name: str
+    created_at: str
+
+
+class ExtractionHistoryItem(BaseModel):
+    id: int
+    patient_id: int | None = None
+    patient_code: str | None = None
+    patient_name: str | None = None
+    model_name: str
+    structured_json: dict[str, Any]
+    created_at: str

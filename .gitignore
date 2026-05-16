@@ -6,6 +6,8 @@ frontend/.next
 **/__pycache__
 **/*.pyc
 .venv
+.run
+.logs
 
 # Data
 .env
@@ -13,6 +15,8 @@ backend/.env
 data/uploads/*
 !data/uploads/.gitkeep
 data/chroma/*
+data/*.db
+backend/data/*.db
 
 # OS
 .DS_Store

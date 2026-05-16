@@ -3,7 +3,7 @@
 Privacy-first clinical extraction platform that runs fully offline using local LLM inference via Ollama.
 
 ## Stack
-- Frontend: Next.js 15, TypeScript, TailwindCSS
+- Frontend: Next.js 15 (App Router), React
 - Backend: FastAPI (Python 3.11+)
 - Local LLM runtime: Ollama (OpenAI-compatible local endpoint)
 - OCR: Tesseract + format-specific parsing (PDF/TXT/DOCX/PNG/JPG)
@@ -56,6 +56,13 @@ npm install
 npm run dev
 ```
 
+### One-click local run
+```bash
+./scripts/dev-start.sh
+./scripts/dev-status.sh
+./scripts/dev-stop.sh
+```
+
 ### Alternative backend launch from `backend/`
 ```bash
 cd backend
@@ -68,6 +75,18 @@ PYTHONPATH=.. uvicorn backend.main:app --reload --port 8000
 
 Frontend: `http://localhost:3000`
 Backend: `http://localhost:8000`
+
+## Vercel deployment
+Frontend-only deployment is supported on Vercel.
+
+1. Import repository in Vercel.
+2. Set project `Root Directory` to `frontend`.
+3. Add env var: `NEXT_PUBLIC_API_BASE_URL=https://<your-backend-host>`.
+4. Deploy.
+
+For full details, see [docs/VERCEL_DEPLOYMENT.md](docs/VERCEL_DEPLOYMENT.md).
+
+Important: a fully offline privacy-first deployment (`FastAPI + Ollama` local inference) cannot be fully hosted on Vercel.
 
 ## Docker offline deployment
 ```bash
@@ -84,6 +103,10 @@ docker compose up --build
 - `GET /models`
 - `POST /models/select`
 - `GET /admin/audit-logs`
+- `POST /patients`
+- `GET /patients`
+- `GET /patients/{patient_id}/history`
+- `GET /extractions`
 
 Full endpoint contract: [docs/API.md](docs/API.md)
 

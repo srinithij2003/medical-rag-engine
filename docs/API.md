@@ -70,3 +70,21 @@ Admin role required.
 
 ## `GET /admin/audit-logs`
 Admin-only audit trail feed.
+
+## `POST /patients`
+Create a patient profile.
+```json
+{ "patient_code": "PT-10001", "name": "Jane Doe" }
+```
+
+## `GET /patients`
+List patients for registry UI.
+
+## `GET /patients/{patient_id}/history`
+Get one patient's extraction timeline.
+
+## `GET /extractions`
+List extraction records.
+
+Optional query:
+- `patient_id=<id>` to filter by patient
