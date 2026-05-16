@@ -6,7 +6,6 @@ import {
   getHealth,
   listPatients,
   getModels,
-  login,
   runOCR,
   selectModel,
   streamExtraction,
@@ -60,10 +59,6 @@ const quickQueue = [
 export default function HomePage() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [token, setToken] = useState('');
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin');
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState('');
 
   const [health, setHealth] = useState(null);
   const [models, setModels] = useState([]);
@@ -90,6 +85,7 @@ export default function HomePage() {
   const [activity, setActivity] = useState([]);
   const [patients, setPatients] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState('');
+  const hasAuth = Boolean(token);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('ocip_token') || '';
@@ -106,45 +102,32 @@ export default function HomePage() {
 
   async function refreshRuntime() {
     try {
-      const [healthData, modelData, patientData] = await Promise.all([getHealth(), getModels(token), listPatients(token)]);
+      const healthData = await getHealth();
       setHealth(healthData);
-      setModels(modelData.models || []);
-      setSelectedModel(modelData.selected || '');
-      setPatients(patientData.items || []);
+      if (hasAuth) {
+        const [modelData, patientData] = await Promise.all([getModels(token), listPatients(token)]);
+        setModels(modelData.models || []);
+        setSelectedModel(modelData.selected || '');
+        setPatients(patientData.items || []);
+      } else {
+        setModels([]);
+        setSelectedModel('');
+        setPatients([]);
+      }
     } catch (error) {
       setGlobalError(error.message || 'Failed to refresh runtime status');
     }
   }
 
   useEffect(() => {
-    if (!token) return;
     refreshRuntime();
-  }, [token]);
+  }, [token, hasAuth]);
 
   useEffect(() => {
     if (!selectedPatientId && patients.length > 0) {
       setSelectedPatientId(String(patients[0].id));
     }
   }, [patients, selectedPatientId]);
-
-  async function handleLogin(event) {
-    event.preventDefault();
-    setAuthLoading(true);
-    setAuthError('');
-    setGlobalError('');
-
-    try {
-      const data = await login(username, password);
-      setToken(data.access_token);
-      localStorage.setItem('ocip_token', data.access_token);
-      logActivity('User authenticated for local clinical workspace.');
-      setInfo('Login successful. Runtime checks started.');
-    } catch (error) {
-      setAuthError(error.message || 'Login failed');
-    } finally {
-      setAuthLoading(false);
-    }
-  }
 
   function handleLogout() {
     setToken('');
@@ -156,6 +139,10 @@ export default function HomePage() {
   }
 
   async function handleModelSelect() {
+    if (!hasAuth) {
+      setGlobalError('Model switching is disabled in public display mode.');
+      return;
+    }
     if (!selectedModel) return;
     setModelSaving(true);
     setGlobalError('');
@@ -184,6 +171,10 @@ export default function HomePage() {
   }
 
   async function handleUploadAndOCR() {
+    if (!hasAuth) {
+      setGlobalError('Upload/OCR is disabled in public display mode.');
+      return;
+    }
     if (!file) {
       setGlobalError('Select a document first.');
       return;
@@ -211,6 +202,10 @@ export default function HomePage() {
   }
 
   async function handleStreamExtraction() {
+    if (!hasAuth) {
+      setGlobalError('Streaming extraction is disabled in public display mode.');
+      return;
+    }
     if (!noteText.trim()) {
       setGlobalError('Clinical note is required for extraction.');
       return;
@@ -257,6 +252,10 @@ export default function HomePage() {
   }
 
   async function handleSyncExtraction() {
+    if (!hasAuth) {
+      setGlobalError('Extraction is disabled in public display mode.');
+      return;
+    }
     if (!noteText.trim()) {
       setGlobalError('Clinical note is required for extraction.');
       return;
@@ -284,36 +283,8 @@ export default function HomePage() {
 
   const flags = useMemo(() => buildClinicalFlags(extraction), [extraction]);
 
-  if (!isHydrated || !token) {
-    return (
-      <main className="login-shell">
-        <section className="login-card">
-          <div className="login-head">
-            <p className="eyebrow">Offline Clinical Intelligence Platform</p>
-            <h1>Clinical Workstation Access</h1>
-            <p>Local-only authentication. No patient note leaves on-prem infrastructure.</p>
-          </div>
-          <form onSubmit={handleLogin} className="login-form">
-            <label>
-              Username
-              <input value={username} onChange={(event) => setUsername(event.target.value)} />
-            </label>
-            <label>
-              Password
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </label>
-            <button type="submit" disabled={authLoading}>
-              {authLoading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </form>
-          {authError ? <p className="text-error">{authError}</p> : null}
-        </section>
-      </main>
-    );
+  if (!isHydrated) {
+    return null;
   }
 
   return (
@@ -351,16 +322,23 @@ export default function HomePage() {
           </button>
         </div>
 
-        <button className="logout" onClick={handleLogout} type="button">
-          Logout
-        </button>
+        {hasAuth ? (
+          <button className="logout" onClick={handleLogout} type="button">
+            Logout
+          </button>
+        ) : (
+          <p className="muted">Public display mode (no authenticated backend session).</p>
+        )}
       </aside>
 
       <section className="main-panel">
         <header className="topbar" id="overview">
           <div>
             <h1>Clinical Intelligence Dashboard</h1>
-            <p>Live operations panel for note extraction, risk flags, and model governance.</p>
+            <p>
+              Live operations panel for note extraction, risk flags, and model governance.
+              {!hasAuth ? ' Demo mode is active on this deployment.' : ''}
+            </p>
           </div>
           <button className="refresh" type="button" onClick={refreshRuntime}>
             Refresh Runtime
@@ -426,7 +404,7 @@ export default function HomePage() {
             </div>
 
             <div className="upload-row">
-              <button type="button" onClick={handleUploadAndOCR} disabled={uploading || !file}>
+              <button type="button" onClick={handleUploadAndOCR} disabled={!hasAuth || uploading || !file}>
                 {uploading ? 'Processing...' : 'Upload + OCR'}
               </button>
               <div className="progress-wrap" aria-label="upload-progress">
@@ -439,6 +417,7 @@ export default function HomePage() {
               Patient Assignment
               <select
                 value={selectedPatientId}
+                disabled={!hasAuth}
                 onChange={(event) => setSelectedPatientId(event.target.value)}
               >
                 <option value="">Unassigned extraction</option>
@@ -461,10 +440,10 @@ export default function HomePage() {
             </label>
 
             <div className="actions">
-              <button type="button" onClick={handleStreamExtraction} disabled={extracting}>
+              <button type="button" onClick={handleStreamExtraction} disabled={!hasAuth || extracting}>
                 {extracting ? 'Streaming...' : 'Stream Extraction'}
               </button>
-              <button type="button" className="ghost" onClick={handleSyncExtraction} disabled={extracting}>
+              <button type="button" className="ghost" onClick={handleSyncExtraction} disabled={!hasAuth || extracting}>
                 Quick Extract
               </button>
             </div>
@@ -485,7 +464,7 @@ export default function HomePage() {
                   </option>
                 ))}
               </select>
-              <button type="button" onClick={handleModelSelect} disabled={modelSaving || !selectedModel}>
+              <button type="button" onClick={handleModelSelect} disabled={!hasAuth || modelSaving || !selectedModel}>
                 {modelSaving ? 'Saving...' : 'Apply Model'}
               </button>
             </div>

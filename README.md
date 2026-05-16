@@ -84,6 +84,9 @@ Frontend-only deployment is supported on Vercel.
 3. Add env var: `NEXT_PUBLIC_API_BASE_URL=https://<your-backend-host>`.
 4. Deploy.
 
+Live frontend display deployment:
+- https://medical-rag-engine-five.vercel.app
+
 For full details, see [docs/VERCEL_DEPLOYMENT.md](docs/VERCEL_DEPLOYMENT.md).
 
 Important: a fully offline privacy-first deployment (`FastAPI + Ollama` local inference) cannot be fully hosted on Vercel.

@@ -101,9 +101,9 @@ export default function PatientsPage() {
     return (
       <main className="login-shell">
         <section className="login-card">
-          <h1>Session required</h1>
-          <p>Please sign in on the dashboard first.</p>
-          <Link href="/">Go to Dashboard Login</Link>
+          <h1>Public Display Mode</h1>
+          <p>Patient management requires an authenticated local backend session.</p>
+          <Link href="/">Back to Dashboard</Link>
         </section>
       </main>
     );
